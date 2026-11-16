@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: releaseguard-config
+  namespace: releaseguard
+data:
+  ENVIRONMENT: "production"
+  KUBERNETES_ENABLED: "true"
+  PROJECT_NAME: "ReleaseGuard AI"
+  DATABASE_URL: "postgresql+psycopg2://releaseguard:releaseguard_secure_password@releaseguard-postgres:5432/releaseguard_db"

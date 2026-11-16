@@ -1,0 +1,60 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": 1,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Active Deployments",
+      "type": "stat",
+      "targets": [{ "expr": "releaseguard_active_deployments", "refId": "A" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "title": "Active Incidents",
+      "type": "stat",
+      "targets": [{ "expr": "releaseguard_active_incidents_total", "refId": "A" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "title": "Total Automated Rollbacks",
+      "type": "stat",
+      "targets": [{ "expr": "releaseguard_rollbacks_total", "refId": "A" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 4,
+      "title": "HTTP Error Rate by Service (%)",
+      "type": "timeseries",
+      "targets": [{ "expr": "releaseguard_service_error_rate_percent", "legendFormat": "{{service}}", "refId": "A" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 5,
+      "title": "P95 Latency by Service (ms)",
+      "type": "timeseries",
+      "targets": [{ "expr": "releaseguard_service_p95_latency_ms", "legendFormat": "{{service}}", "refId": "A" }]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["releaseguard", "slo", "sre"],
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": { "refresh_intervals": ["5s", "10s", "30s", "1m"] },
+  "timezone": "browser",
+  "title": "ReleaseGuard AI — Overview Dashboard",
+  "version": 1
+}

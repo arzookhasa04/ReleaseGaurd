@@ -1,0 +1,30 @@
+groups:
+  - name: releaseguard_slo_alerts
+    rules:
+      - alert: ServiceSLOErrorRateBreached
+        expr: releaseguard_service_error_rate_percent > 1.0
+        for: 15s
+        labels:
+          severity: critical
+          team: sre-platform
+        annotations:
+          summary: "Microservice {{ $labels.service }} HTTP error rate breached SLO threshold"
+          description: "Error rate is currently {{ $value }}%, exceeding the 1.0% maximum allowed threshold."
+
+      - alert: ServiceP95LatencyDegraded
+        expr: releaseguard_service_p95_latency_ms > 450
+        for: 30s
+        labels:
+          severity: warning
+          team: sre-platform
+        annotations:
+          summary: "Microservice {{ $labels.service }} P95 latency degraded"
+          description: "P95 latency reached {{ $value }}ms, violating response time objective."
+
+      - alert: AutomatedRollbackTriggered
+        expr: increase(releaseguard_rollbacks_total[5m]) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "ReleaseGuard automated rollback executed"
+          description: "Automated recovery drained canary traffic to protect customer SLA."
