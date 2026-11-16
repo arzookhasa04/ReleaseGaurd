@@ -3,7 +3,24 @@ import {
   ChaosExperiment, AuditLog, DashboardOverview, PortfolioInsights
 } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+// Support both VITE_API_BASE_URL and VITE_API_URL
+const rawEnvUrl = (
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  ''
+).trim();
+
+// Normalize URL:
+// If user enters "https://my-backend.onrender.com", append "/api"
+// If user enters "https://my-backend.onrender.com/api", use as is
+// If empty, fallback to local development URL
+export const API_BASE = (() => {
+  if (!rawEnvUrl) return 'http://localhost:8000/api';
+  const clean = rawEnvUrl.replace(/\/+$/, '');
+  return clean.endsWith('/api') ? clean : `${clean}/api`;
+})();
+
+export const BACKEND_ROOT = API_BASE.replace(/\/api$/, '');
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${endpoint}`;

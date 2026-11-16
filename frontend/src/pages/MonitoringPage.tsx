@@ -11,7 +11,7 @@ import {
 import { StatusBadge } from '../components/StatusBadge';
 import { MetricCard } from '../components/MetricCard';
 import { Service } from '../types';
-import { api } from '../services/api';
+import { api, BACKEND_ROOT } from '../services/api';
 
 export const MonitoringPage: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
@@ -112,7 +112,7 @@ export const MonitoringPage: React.FC = () => {
             <span>Generate Telemetry Tick</span>
           </button>
           <a
-            href="http://localhost:8000/metrics"
+            href={`${BACKEND_ROOT}/metrics`}
             target="_blank"
             rel="noreferrer"
             className="px-3 py-1.5 text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white rounded-lg flex items-center gap-1.5 shadow-sm transition-colors"

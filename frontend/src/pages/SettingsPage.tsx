@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 
 import { ConfirmationModal } from '../components/ConfirmationModal';
-import { api } from '../services/api';
+import { api, BACKEND_ROOT } from '../services/api';
 
 export const SettingsPage: React.FC = () => {
   const [healthData, setHealthData] = useState<any>(null);
@@ -83,7 +83,7 @@ export const SettingsPage: React.FC = () => {
               {healthData?.infrastructure?.telemetry_source || 'ReleaseGuard Telemetry Synthesizer'}
             </span>
             <span className="text-[10px] text-slate-500 block mt-1">
-              Active Prometheus Exporter: <a href="http://localhost:8000/metrics" target="_blank" rel="noreferrer" className="text-cyan-400 underline">/metrics</a>
+              Active Prometheus Exporter: <a href={`${BACKEND_ROOT}/metrics`} target="_blank" rel="noreferrer" className="text-cyan-400 underline">/metrics</a>
             </span>
           </div>
         </div>

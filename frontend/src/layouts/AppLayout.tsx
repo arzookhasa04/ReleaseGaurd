@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
+import { RefreshCw } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { Sidebar } from '../components/Sidebar';
 import { DemoScenariosModal } from '../components/DemoScenariosModal';
@@ -10,21 +11,24 @@ export const AppLayout: React.FC = () => {
   const [environment, setEnvironment] = useState<Environment>('production');
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
+  const [isBackendWakingUp, setIsBackendWakingUp] = useState(false);
 
   const fetchOverview = async () => {
     try {
       const data = await api.getDashboardOverview(environment);
       setOverview(data);
+      setIsBackendWakingUp(false);
     } catch (err) {
-      console.error('Failed to fetch overview metrics', err);
+      console.warn('Backend connection pending or waking up...', err);
+      setIsBackendWakingUp(true);
     }
   };
 
   useEffect(() => {
     fetchOverview();
-    const interval = setInterval(fetchOverview, 8000);
+    const interval = setInterval(fetchOverview, isBackendWakingUp ? 4000 : 8000);
     return () => clearInterval(interval);
-  }, [environment]);
+  }, [environment, isBackendWakingUp]);
 
   const handleTriggerTick = async () => {
     try {
@@ -37,6 +41,19 @@ export const AppLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#080D1A] text-slate-100 flex flex-col font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+      {/* Cold-start notification banner for Render free tier */}
+      {isBackendWakingUp && (
+        <div className="bg-amber-950/90 border-b border-amber-800/80 px-4 py-2 text-xs text-amber-200 flex items-center justify-between animate-pulse">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />
+            <span>Connecting to backend... Render Free Tier spins down on idle; initial wake-up takes ~30-45s. Reconnecting automatically.</span>
+          </div>
+          <span className="font-mono text-[10px] bg-amber-900/60 px-2 py-0.5 rounded border border-amber-700/60 text-amber-300">
+            CONNECTING
+          </span>
+        </div>
+      )}
+
       <Navbar
         environment={environment}
         onEnvironmentChange={setEnvironment}

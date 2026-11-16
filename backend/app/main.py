@@ -7,7 +7,7 @@ from prometheus_client import CONTENT_TYPE_LATEST
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.database import engine, Base, SessionLocal, get_db
+from app.core.database import engine, Base, SessionLocal, get_db, check_db_connection
 from app.engines.state_machine import InvalidStateTransitionError
 from app.services.demo_seeder import seed_demo_data
 from app.adapters.prometheus_exporter import get_prometheus_metrics_output
@@ -29,17 +29,21 @@ logger = logging.getLogger("releaseguard")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: initialize database tables and seed demo dataset
+    # Startup: initialize database tables and seed demo dataset safely
     logger.info("Initializing ReleaseGuard AI Database Tables...")
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
     try:
-        seed_demo_data(db, force=False)
-        logger.info("Demo dataset verified and ready.")
-    finally:
-        db.close()
+        Base.metadata.create_all(bind=engine)
+        db = SessionLocal()
+        try:
+            seed_demo_data(db, force=False)
+            logger.info("Demo dataset verified and ready.")
+        finally:
+            db.close()
+    except Exception as e:
+        logger.error(f"Error during startup database initialization: {e}")
+
     yield
-    # Shutdown logic if any
+
     logger.info("Shutting down ReleaseGuard AI platform.")
 
 app = FastAPI(
@@ -51,11 +55,15 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS Middleware
+# Robust CORS Middleware supporting local, Vercel, and dynamic domains
+cors_origins = settings.CORS_ORIGINS if isinstance(settings.CORS_ORIGINS, list) else [settings.CORS_ORIGINS]
+is_wildcard = "*" in cors_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
+    allow_origins=cors_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app" if not is_wildcard else None,
+    allow_credentials=not is_wildcard,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -73,6 +81,17 @@ async def invalid_state_transition_handler(request: Request, exc: InvalidStateTr
         }
     )
 
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "error": "INTERNAL_SERVER_ERROR",
+            "message": "An internal platform error occurred. Telemetry has been logged safely."
+        }
+    )
+
 # Routers
 app.include_router(services_router, prefix=settings.API_V1_STR)
 app.include_router(deployments_router, prefix=settings.API_V1_STR)
@@ -84,14 +103,28 @@ app.include_router(audit_router, prefix=settings.API_V1_STR)
 app.include_router(ai_router, prefix=settings.API_V1_STR)
 app.include_router(demo_router, prefix=settings.API_V1_STR)
 
+@app.get("/")
+def root_endpoint():
+    return {
+        "service": settings.PROJECT_NAME,
+        "version": settings.VERSION,
+        "docs": "/docs",
+        "health": "/api/health",
+        "metrics": "/metrics"
+    }
+
 @app.get("/api/health")
+@app.get("/healthz")
 def health_check():
     cluster_status = KubernetesAdapter.get_cluster_status()
+    db_status = check_db_connection()
+    
     return {
         "status": "HEALTHY",
         "service": settings.PROJECT_NAME,
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT,
+        "database": db_status,
         "infrastructure": cluster_status
     }
 
